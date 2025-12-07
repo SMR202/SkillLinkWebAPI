@@ -33,7 +33,7 @@ app.get('/test-db', async (req, res) => {
 // Initialize database (create tables)
 app.post('/init-db', async (req, res) => {
   try {
-    const force = req.query.force === 'true'; // ?force=true to drop existing tables
+    const force = req.query.force === 'true';
     await syncDatabase(force);
     
     // Seed categories if they don't exist
@@ -52,12 +52,10 @@ app.post('/init-db', async (req, res) => {
     }
     
     res.json({ 
-app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log('📊 Database URL configured:', process.env.MYSQL_URL ? '✅' : '❌');
-  console.log('💡 Visit /init-db (POST) to create database tables');
-  console.log('💡 Visit /db-info (GET) to see database status');
-}); });
+      status: 'success', 
+      message: force ? 'Database reset and initialized successfully!' : 'Database initialized successfully!',
+      categoriesSeeded: categoryCount === 0
+    });
   } catch (error) {
     console.error('Database initialization error:', error);
     res.status(500).json({ 
@@ -93,6 +91,8 @@ app.get('/db-info', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('MySQL URL configured:', process.env.MYSQL_URL ? 'Yes' : 'No');
+  console.log('🚀 Server running on port ' + PORT);
+  console.log('📊 Database URL configured:', process.env.MYSQL_URL ? '✅' : '❌');
+  console.log('💡 Visit /init-db (POST) to create database tables');
+  console.log('💡 Visit /db-info (GET) to see database status');
 });
