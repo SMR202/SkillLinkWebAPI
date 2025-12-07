@@ -7,6 +7,7 @@ const ProviderResponse = require('./ProviderResponse');
 const Notification = require('./Notification');
 const Conversation = require('./Conversation');
 const Message = require('./Message');
+const Review = require('./Review');
 
 // Define relationships
 
@@ -29,6 +30,14 @@ ProviderResponse.belongsTo(ServicePost, { foreignKey: 'postId', as: 'post' });
 // User (Provider) -> ProviderResponse (One to Many)
 User.hasMany(ProviderResponse, { foreignKey: 'providerId', as: 'responses' });
 ProviderResponse.belongsTo(User, { foreignKey: 'providerId', as: 'provider' });
+
+// Review relationships
+User.hasMany(Review, { foreignKey: 'reviewerId', as: 'givenReviews' });
+User.hasMany(Review, { foreignKey: 'revieweeId', as: 'receivedReviews' });
+Review.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewer' });
+Review.belongsTo(User, { foreignKey: 'revieweeId', as: 'reviewee' });
+ServicePost.hasMany(Review, { foreignKey: 'postId', as: 'reviews' });
+Review.belongsTo(ServicePost, { foreignKey: 'postId', as: 'post' });
 
 // User -> Notification (One to Many)
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
@@ -67,5 +76,6 @@ module.exports = {
   Notification,
   Conversation,
   Message,
+  Review,
   syncDatabase
 };

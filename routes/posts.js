@@ -1,5 +1,5 @@
 const express = require('express');
-const { ServicePost, PostImage, User, Category, ProviderResponse } = require('../models');
+const { ServicePost, PostImage, User, Category, ProviderResponse, Review, Notification } = require('../models');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
@@ -407,6 +407,178 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ 
       status: 'error', 
       message: 'Failed to delete post',
+      error: error.message 
+    });
+  }
+});
+
+// Update post status (for status transitions like in_progress, completed, cancelled)
+router.put('/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const { status } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'Status is required' 
+      });
+    }
+
+    const post = await ServicePost.findByPk(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Post not found' 
+      });
+    }
+
+    // Check ownership
+    if (post.userId !== req.user.id) {
+      return res.status(403).json({ 
+        status: 'error', 
+        message: 'You can only update your own posts' 
+      });
+    }
+
+    // Update status
+    await post.update({ status });
+
+    res.json({
+      status: 'success',
+      message: 'Post status updated successfully',
+      data: {
+        post
+      }
+    });
+  } catch (error) {
+    console.error('Update post status error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to update post status',
+      error: error.message 
+    });
+  }
+});
+
+// Close/complete a post and optionally create review
+router.post('/:id/close', authenticateToken, async (req, res) => {
+  try {
+    const { providerId, rating, comment } = req.body;
+    
+    const post = await ServicePost.findByPk(req.params.id, {
+      include: [
+        {
+          model: ProviderResponse,
+          as: 'responses',
+          where: { providerId, status: 'accepted_by_customer' },
+          required: false
+        }
+      ]
+    });
+
+    if (!post) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Post not found' 
+      });
+    }
+
+    // Check ownership
+    if (post.userId !== req.user.id) {
+      return res.status(403).json({ 
+        status: 'error', 
+        message: 'You can only close your own posts' 
+      });
+    }
+
+    // Update post status to completed
+    await post.update({ status: 'completed' });
+
+    // If rating and providerId provided, create review
+    if (rating && providerId) {
+      await Review.create({
+        postId: post.id,
+        reviewerId: req.user.id,
+        revieweeId: providerId,
+        rating: parseFloat(rating),
+        comment,
+        reviewType: 'customer_to_provider'
+      });
+
+      // Update provider's average rating
+      const provider = await User.findByPk(providerId);
+      if (provider) {
+        const reviews = await Review.findAll({
+          where: { revieweeId: providerId }
+        });
+        
+        const avgRating = reviews.reduce((sum, r) => sum + parseFloat(r.rating), 0) / reviews.length;
+        await provider.update({ 
+          rating: avgRating.toFixed(1),
+          reviewCount: reviews.length
+        });
+
+        // Create notification for provider
+        await Notification.create({
+          userId: providerId,
+          type: 'review_received',
+          title: 'New Review',
+          message: `${req.user.fullName} left you a ${rating}-star review`,
+          postId: post.id,
+          isRead: false
+        });
+      }
+    }
+
+    res.json({
+      status: 'success',
+      message: 'Post closed successfully',
+      data: {
+        post
+      }
+    });
+  } catch (error) {
+    console.error('Close post error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to close post',
+      error: error.message 
+    });
+  }
+});
+
+// Get reviews for a user (provider)
+router.get('/user/:userId/reviews', async (req, res) => {
+  try {
+    const reviews = await Review.findAll({
+      where: { revieweeId: req.params.userId },
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: User,
+          as: 'reviewer',
+          attributes: ['id', 'fullName', 'profileImageUrl']
+        },
+        {
+          model: ServicePost,
+          as: 'post',
+          attributes: ['id', 'title']
+        }
+      ]
+    });
+
+    res.json({
+      status: 'success',
+      data: {
+        reviews
+      }
+    });
+  } catch (error) {
+    console.error('Get reviews error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to fetch reviews',
       error: error.message 
     });
   }

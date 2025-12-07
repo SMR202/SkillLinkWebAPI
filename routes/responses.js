@@ -1,5 +1,5 @@
 const express = require('express');
-const { ProviderResponse, ServicePost, User, Notification } = require('../models');
+const { ProviderResponse, ServicePost, User, Notification, Review } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
@@ -445,6 +445,75 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ 
       status: 'error', 
       message: 'Failed to withdraw response',
+      error: error.message 
+    });
+  }
+});
+
+// Reject a response (customer rejecting a provider's response)
+router.put('/:id/reject', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'customer') {
+      return res.status(403).json({ 
+        status: 'error', 
+        message: 'Only customers can reject responses' 
+      });
+    }
+
+    const response = await ProviderResponse.findByPk(req.params.id, {
+      include: [
+        {
+          model: ServicePost,
+          as: 'post'
+        },
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['id', 'fullName', 'fcmToken']
+        }
+      ]
+    });
+
+    if (!response) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Response not found' 
+      });
+    }
+
+    // Verify the post belongs to the current user
+    if (response.post.userId !== req.user.id) {
+      return res.status(403).json({ 
+        status: 'error', 
+        message: 'You can only reject responses to your own posts' 
+      });
+    }
+
+    // Update response status
+    await response.update({ status: 'rejected_by_customer' });
+
+    // Create notification for provider
+    await Notification.create({
+      userId: response.providerId,
+      type: 'request_rejected',
+      title: 'Response Rejected',
+      message: `${req.user.fullName} rejected your response for: ${response.post.title}`,
+      postId: response.post.id,
+      isRead: false
+    });
+
+    res.json({
+      status: 'success',
+      message: 'Response rejected successfully',
+      data: {
+        response
+      }
+    });
+  } catch (error) {
+    console.error('Reject response error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to reject response',
       error: error.message 
     });
   }
