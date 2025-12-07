@@ -1,0 +1,15 @@
+{
+  "name": "webapi-project",
+  "version": "1.0.0",
+  "description": "A simple Node.js web API for deployment on Render.com",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["node", "api", "express", "render"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
