@@ -10,8 +10,9 @@ const messageRoutes = require('./routes/messages');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json());
+// Middleware - Increase payload limit for base64 images
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
