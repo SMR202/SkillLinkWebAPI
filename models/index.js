@@ -5,6 +5,8 @@ const ServicePost = require('./ServicePost');
 const PostImage = require('./PostImage');
 const ProviderResponse = require('./ProviderResponse');
 const Notification = require('./Notification');
+const Conversation = require('./Conversation');
+const Message = require('./Message');
 
 // Define relationships
 
@@ -32,6 +34,19 @@ ProviderResponse.belongsTo(User, { foreignKey: 'providerId', as: 'provider' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// Conversation relationships
+Conversation.belongsTo(User, { foreignKey: 'user1Id', as: 'user1' });
+Conversation.belongsTo(User, { foreignKey: 'user2Id', as: 'user2' });
+Conversation.belongsTo(ServicePost, { foreignKey: 'postId', as: 'post' });
+Conversation.belongsTo(Message, { foreignKey: 'lastMessageId', as: 'lastMessage' });
+
+// Message relationships
+Message.belongsTo(Conversation, { foreignKey: 'conversationId', as: 'conversation' });
+Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
+Message.belongsTo(User, { foreignKey: 'receiverId', as: 'receiver' });
+
+Conversation.hasMany(Message, { foreignKey: 'conversationId', as: 'messages' });
+
 // Sync database (create tables)
 const syncDatabase = async (force = false) => {
   try {
@@ -50,5 +65,7 @@ module.exports = {
   PostImage,
   ProviderResponse,
   Notification,
+  Conversation,
+  Message,
   syncDatabase
 };

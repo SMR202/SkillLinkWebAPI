@@ -6,6 +6,7 @@ const categoryRoutes = require('./routes/categories');
 const postRoutes = require('./routes/posts');
 const responseRoutes = require('./routes/responses');
 const notificationRoutes = require('./routes/notifications');
+const messageRoutes = require('./routes/messages');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +19,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/responses', responseRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.get('/', (req, res) => {
   res.send('🚀 SkillLink API - Running Successfully!');
