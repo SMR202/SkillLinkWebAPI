@@ -17,11 +17,11 @@ const PostImage = sequelize.define('PostImage', {
     onDelete: 'CASCADE'
   },
   imageUrl: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT('long'), // LONGTEXT for large base64 images
     allowNull: false
   },
   thumbnailUrl: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT('long'), // LONGTEXT for large base64 images
     allowNull: true
   },
   sortOrder: {
