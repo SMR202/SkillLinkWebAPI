@@ -40,7 +40,7 @@ const Message = sequelize.define('Message', {
     allowNull: false
   },
   attachmentUrl: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT('long'), // LONGTEXT for large base64 images
     allowNull: true
   },
   isRead: {
