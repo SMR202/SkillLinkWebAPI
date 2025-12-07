@@ -4,6 +4,27 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get unread count only (for polling)
+router.get('/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const unreadCount = await Notification.count({
+      where: { userId: req.user.id, isRead: false }
+    });
+
+    res.json({
+      status: 'success',
+      data: { unreadCount }
+    });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to fetch unread count',
+      error: error.message 
+    });
+  }
+});
+
 // Get my notifications
 router.get('/', authenticateToken, async (req, res) => {
   try {
