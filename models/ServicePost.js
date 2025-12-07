@@ -37,7 +37,7 @@ const ServicePost = sequelize.define('ServicePost', {
   },
   location: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: true
   },
   city: {
     type: DataTypes.STRING(100),

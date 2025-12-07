@@ -2,6 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const { sequelize, syncDatabase, Category } = require('./models');
 const authRoutes = require('./routes/auth');
+const categoryRoutes = require('./routes/categories');
+const postRoutes = require('./routes/posts');
+const responseRoutes = require('./routes/responses');
+const notificationRoutes = require('./routes/notifications');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -10,6 +14,10 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/responses', responseRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('🚀 SkillLink API - Running Successfully!');
