@@ -16,7 +16,7 @@ const pool = mysql.createPool({
 });
 
 app.get('/', (req, res) => {
-  res.send('Hello from Node.js Web API!');
+  res.send('Hello from Node.js Web API! What is up Niggers');
 });
 
 // Test database connection endpoint
