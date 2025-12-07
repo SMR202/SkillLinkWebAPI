@@ -1,30 +1,20 @@
 require('dotenv').config();
 const express = require('express');
-const mysql = require('mysql2/promise');
+const { sequelize, syncDatabase, Category } = require('./models');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 
-// Create MySQL connection pool
-const pool = mysql.createPool({
-  uri: process.env.MYSQL_URL,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
-
 app.get('/', (req, res) => {
-  res.send('Hello from Node.js Web API! What is up Niggers');
+  res.send('🚀 SkillLink API - Running Successfully!');
 });
 
-// Test database connection endpoint
+// Test database connection
 app.get('/test-db', async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    await connection.query('SELECT 1');
-    connection.release();
+    await sequelize.authenticate();
     res.json({ 
       status: 'success', 
       message: 'Database connection successful!',
@@ -40,15 +30,57 @@ app.get('/test-db', async (req, res) => {
   }
 });
 
-// Get database info
+// Initialize database (create tables)
+app.post('/init-db', async (req, res) => {
+  try {
+    const force = req.query.force === 'true'; // ?force=true to drop existing tables
+    await syncDatabase(force);
+    
+    // Seed categories if they don't exist
+    const categoryCount = await Category.count();
+    if (categoryCount === 0) {
+      await Category.bulkCreate([
+        { name: 'Electrician', icon: '⚡', description: 'Electrical repairs and installations' },
+        { name: 'Plumber', icon: '🔧', description: 'Plumbing services and repairs' },
+        { name: 'Tutor', icon: '📚', description: 'Educational tutoring services' },
+        { name: 'Cleaning', icon: '🧹', description: 'Home and office cleaning' },
+        { name: 'Development', icon: '💻', description: 'Software and web development' },
+        { name: 'Design', icon: '🎨', description: 'Graphic and UI/UX design' },
+        { name: 'Carpentry', icon: '🪚', description: 'Woodwork and furniture' },
+        { name: 'Painting', icon: '🖌️', description: 'House painting services' }
+      ]);
+    }
+    
+    res.json({ 
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log('📊 Database URL configured:', process.env.MYSQL_URL ? '✅' : '❌');
+  console.log('💡 Visit /init-db (POST) to create database tables');
+  console.log('💡 Visit /db-info (GET) to see database status');
+}); });
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: 'Failed to initialize database',
+      error: error.message 
+    });
+  }
+});
+
+// Get database schema info
 app.get('/db-info', async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    const [rows] = await connection.query('SELECT DATABASE() as db_name, VERSION() as db_version');
-    connection.release();
+    const [results] = await sequelize.query('SHOW TABLES');
+    const tables = results.map(row => Object.values(row)[0]);
+    
     res.json({ 
       status: 'success', 
-      data: rows[0]
+      data: {
+        database: sequelize.config.database,
+        tables: tables,
+        tableCount: tables.length
+      }
     });
   } catch (error) {
     console.error('Database query error:', error);
