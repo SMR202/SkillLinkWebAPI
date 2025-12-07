@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { User, Conversation, Message, ServicePost } = require('../models');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
 // Get all conversations for the current user
-router.get('/conversations', auth, async (req, res) => {
+router.get('/conversations', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { page = 1, limit = 20 } = req.query;
@@ -85,7 +85,7 @@ router.get('/conversations', auth, async (req, res) => {
 });
 
 // Get or create conversation between two users
-router.post('/conversations', auth, async (req, res) => {
+router.post('/conversations', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { otherUserId, postId } = req.body;
@@ -189,7 +189,7 @@ router.post('/conversations', auth, async (req, res) => {
 });
 
 // Get messages in a conversation
-router.get('/conversations/:conversationId/messages', auth, async (req, res) => {
+router.get('/conversations/:conversationId/messages', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { conversationId } = req.params;
@@ -275,7 +275,7 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
 });
 
 // Send a message
-router.post('/messages', auth, async (req, res) => {
+router.post('/messages', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { conversationId, receiverId, content, messageType = 'text', attachmentUrl } = req.body;
@@ -361,7 +361,7 @@ router.post('/messages', auth, async (req, res) => {
 });
 
 // Get unread message count
-router.get('/messages/unread/count', auth, async (req, res) => {
+router.get('/messages/unread/count', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
