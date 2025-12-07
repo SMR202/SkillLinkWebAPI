@@ -280,10 +280,19 @@ router.post('/messages', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const { conversationId, receiverId, content, messageType = 'text', attachmentUrl } = req.body;
 
-    if (!conversationId || !receiverId || !content) {
+    // For non-text messages (image, audio, file), content can be empty
+    if (!conversationId || !receiverId) {
       return res.status(400).json({
         status: 'error',
-        message: 'conversationId, receiverId, and content are required'
+        message: 'conversationId and receiverId are required'
+      });
+    }
+    
+    // For text messages, content is required
+    if (messageType === 'text' && !content) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'content is required for text messages'
       });
     }
 
