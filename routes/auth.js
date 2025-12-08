@@ -230,6 +230,34 @@ router.put('/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Update FCM token
+router.put('/fcm-token', authenticateToken, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    
+    if (!fcmToken) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'FCM token is required'
+      });
+    }
+
+    await req.user.update({ fcmToken });
+    
+    res.json({
+      status: 'success',
+      message: 'FCM token updated successfully'
+    });
+  } catch (error) {
+    console.error('FCM token update error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to update FCM token',
+      error: error.message
+    });
+  }
+});
+
 // Refresh token (protected route)
 router.post('/refresh-token', authenticateToken, async (req, res) => {
   try {

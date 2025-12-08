@@ -3,6 +3,7 @@ const router = express.Router();
 const { User, Conversation, Message, ServicePost } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const { sendPushNotification } = require('../utils/fcmHelper');
 
 // Get all conversations for the current user
 router.get('/conversations', authenticateToken, async (req, res) => {
@@ -350,7 +351,27 @@ router.post('/messages', authenticateToken, async (req, res) => {
       ]
     });
 
-    // TODO: Send push notification to receiver
+    // Send push notification to receiver
+    const receiver = await User.findByPk(receiverId, {
+      attributes: ['fcmToken', 'fullName']
+    });
+    
+    if (receiver && receiver.fcmToken) {
+      const notificationBody = messageType === 'text' 
+        ? (content.length > 50 ? content.substring(0, 50) + '...' : content)
+        : `Sent ${messageType === 'image' ? 'a photo' : messageType === 'audio' ? 'a voice message' : 'a file'}`;
+      
+      await sendPushNotification(
+        receiver.fcmToken,
+        `Message from ${req.user.fullName}`,
+        notificationBody,
+        {
+          type: 'new_message',
+          conversationId: conversationId.toString(),
+          senderId: userId.toString()
+        }
+      );
+    }
 
     res.status(201).json({
       status: 'success',

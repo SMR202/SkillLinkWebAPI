@@ -2,6 +2,7 @@ const express = require('express');
 const { ProviderResponse, ServicePost, User, Notification, Review } = require('../models');
 const { authenticateToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const { sendPushNotification } = require('../utils/fcmHelper');
 
 const router = express.Router();
 
@@ -95,6 +96,20 @@ router.post('/', authenticateToken, async (req, res) => {
       postId: post.id,
       isRead: false
     });
+
+    // Send push notification to post owner
+    if (post.user && post.user.fcmToken) {
+      await sendPushNotification(
+        post.user.fcmToken,
+        'New Response Received',
+        `${req.user.fullName} responded to your service request: ${post.title}`,
+        {
+          type: 'new_response',
+          postId: post.id.toString(),
+          responseId: response.id.toString()
+        }
+      );
+    }
 
     // Fetch complete response with provider details
     const completeResponse = await ProviderResponse.findByPk(response.id, {
@@ -338,6 +353,20 @@ router.put('/:id/accept', authenticateToken, async (req, res) => {
       isRead: false
     });
 
+    // Send push notification to provider
+    if (response.provider && response.provider.fcmToken) {
+      await sendPushNotification(
+        response.provider.fcmToken,
+        'Response Accepted!',
+        `${req.user.fullName} accepted your response for: ${response.post.title}`,
+        {
+          type: 'response_accepted',
+          postId: response.post.id.toString(),
+          responseId: response.id.toString()
+        }
+      );
+    }
+
     res.json({
       status: 'success',
       message: 'Response accepted successfully',
@@ -501,6 +530,20 @@ router.put('/:id/reject', authenticateToken, async (req, res) => {
       postId: response.post.id,
       isRead: false
     });
+
+    // Send push notification to provider
+    if (response.provider && response.provider.fcmToken) {
+      await sendPushNotification(
+        response.provider.fcmToken,
+        'Response Rejected',
+        `${req.user.fullName} rejected your response for: ${response.post.title}`,
+        {
+          type: 'response_rejected',
+          postId: response.post.id.toString(),
+          responseId: response.id.toString()
+        }
+      );
+    }
 
     res.json({
       status: 'success',
