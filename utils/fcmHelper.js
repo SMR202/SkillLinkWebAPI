@@ -7,10 +7,17 @@ function initializeFirebase() {
   if (initialized) return;
   
   try {
-    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || 
-                               path.join(__dirname, '../firebase-service-account.json');
+    let serviceAccount;
     
-    const serviceAccount = require(serviceAccountPath);
+    // Check if credentials are in environment variable (Railway)
+    if (process.env.FIREBASE_CONFIG) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+    } else {
+      // Fall back to local file
+      const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || 
+                                 path.join(__dirname, '../firebase-service-account.json');
+      serviceAccount = require(serviceAccountPath);
+    }
     
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)

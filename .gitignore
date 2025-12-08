@@ -13,3 +13,6 @@ npm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+google-services.json
+firebase-service-account.json
