@@ -200,8 +200,18 @@ router.put('/profile', authenticateToken, async (req, res) => {
       address, 
       city, 
       location,
-      profileImageUrl 
+      profileImageUrl,
+      role,
+      phoneNumber
     } = req.body;
+
+    // Validate role if provided
+    if (role && !['customer', 'provider'].includes(role)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Role must be either "customer" or "provider"'
+      });
+    }
 
     // Update user
     await req.user.update({
@@ -210,7 +220,9 @@ router.put('/profile', authenticateToken, async (req, res) => {
       ...(address && { address }),
       ...(city && { city }),
       ...(location && { location }),
-      ...(profileImageUrl && { profileImageUrl })
+      ...(profileImageUrl && { profileImageUrl }),
+      ...(role && { role }),
+      ...(phoneNumber && { phoneNumber })
     });
 
     res.json({
